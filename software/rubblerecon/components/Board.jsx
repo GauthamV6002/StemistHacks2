@@ -19,6 +19,9 @@ const Board = () => {
       iid: iid,
       index: counter,
       name: _name,
+      x: 0,
+      y: 0,
+      wasMoving: false,
       connection: _connection
     }
     setCards({...cards, ...newCard})
@@ -26,13 +29,23 @@ const Board = () => {
     iid++;
   }
 
-  const maximizeCard = (index) => {
+  const maximizeCard = (index, x, y, wasMoving) => {
     setIsMaximized(true);
     setMaximizedIndex(index);
+    updateCard(index, x, y, wasMoving);
   }
 
-  const minimizeCard = () => {
+  const minimizeCard = (index, x, y, wasMoving) => {
     setIsMaximized(false);
+    updateCard(index, x, y, wasMoving);
+  }
+
+  const updateCard = (index, x, y, wasMoving) => {
+    let updatedCard = cards[index];
+    updatedCard.x = x;
+    updatedCard.y = y;
+    updatedCard.wasMoving = wasMoving;
+    setCards({...cards, [index]: updatedCard});
   }
 
   const deleteCard = (index) => {
@@ -40,23 +53,19 @@ const Board = () => {
     setCards(clone);
   }
 
-  useEffect(() => {
-    console.log(cards);
-  }, [cards]);
-
   return (
     <div className="flex flex-wrap flex-row w-max-screen p-2 justify-evenly">
       {isMaximized ?
         <>
           {
-            <Card maxFunc={maximizeCard} minFunc={minimizeCard} deleteFunc={deleteCard} maximized={true} index={maximizedIndex} name={cards[maximizedIndex].name} connection={cards[maximizedIndex].connection} />
+            <Card wasMoving={cards[maximizedIndex].wasMoving} x={cards[maximizedIndex].x} y={cards[maximizedIndex].y} maxFunc={maximizeCard} minFunc={minimizeCard} width={window.innerWidth / 16 * 3/4} deleteFunc={deleteCard} maximized={true} index={maximizedIndex} name={cards[maximizedIndex].name} connection={cards[maximizedIndex].connection} />
           }
         </>
       :
         <>
         {
           Object.keys(cards).map((v, i) => (
-            <Card key={cards[v].iid} maxFunc={maximizeCard} minFunc={minimizeCard} deleteFunc={deleteCard} maximized={false} index={v} name={cards[v].name} connection={cards[v].connection} />
+            <Card wasMoving={cards[v].wasMoving} x={cards[v].x} y={cards[v].y} key={cards[v].iid} maxFunc={maximizeCard} minFunc={minimizeCard} width={16} deleteFunc={deleteCard} maximized={false} index={v} name={cards[v].name} connection={cards[v].connection} />
           ))
         }
         <AddTile addFunc={addCard} counter={counter} />

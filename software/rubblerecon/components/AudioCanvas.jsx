@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import Canvas from './Canvas'
 
-const AudioCanvas = () => {
+const AudioCanvas = ({ moving }) => {
 
   const [buttonPressed, setButtonPressed] = useState(false);
 
@@ -12,11 +12,22 @@ const AudioCanvas = () => {
   const [audioSource, setAudioSource] = useState(null);
   const [analyser, setAnalyser] = useState(null);
 
+  useEffect(() => {
+    audioRef.current.loop = true;
+    audioRef.current.src = "rocks.mp3";
+    audioRef.current.volume = 0;
+  }, []);
+
+  useEffect(() => {
+    moving ? audioRef.current.play() : audioRef.current.pause();
+  }, [moving]);
+
   // set context
   useEffect(() => {
     if (!buttonPressed || audioCtx != null) { // audio has not been set yet or this has already run
       return;
     }
+    
     setAudioCtx(new window.AudioContext());
   }, [buttonPressed]); // trigger on start and when audio changes
 
@@ -25,6 +36,7 @@ const AudioCanvas = () => {
     if (audioCtx == null || audioSource != null) {  // context has not been set yet or this has already run
       return;
     }
+    
     setAudioSource(audioCtx.createMediaElementSource(audioRef.current));
   }, [audioCtx]); // trigger on start and when context changes
 
@@ -33,6 +45,7 @@ const AudioCanvas = () => {
     if (audioSource == null || analyser != null) {
       return;
     }
+    
     setAnalyser(audioCtx.createAnalyser());
   }, [audioSource])
 
@@ -43,13 +56,22 @@ const AudioCanvas = () => {
 
     audioSource.connect(analyser);
     analyser.connect(audioCtx.destination);
-    analyser.fftSize = 128;
+    analyser.fftSize = Math.max(Math.pow(2, Math.ceil(Math.log(width)/Math.log(2))), 32);
     let bufferLength = analyser.frequencyBinCount;
     let dataArray = new Uint8Array(bufferLength);
 
     const barWidth = width / bufferLength;
     ctx.clearRect(0, 0, width, height);
     analyser.getByteFrequencyData(dataArray);
+    // ctx.fillStyle = "gray";
+    // for (let x = 0; x < width; x += width/10) {
+    //   ctx.rect(x, 0, 0.1, height);
+    //   ctx.fill();
+    // }
+    // for (let y = 0; y < height; y += height/10) {
+    //   ctx.rect(0, y, width, 0.5);
+    //   ctx.fill();
+    // }
     let x = 0;
     ctx.fillStyle = "rgb(251, 146, 60)";
     for (let i = 0; i < bufferLength; i++) {
@@ -66,22 +88,16 @@ const AudioCanvas = () => {
   return (
     <div>
       <audio src={"rocks.mp3"} ref={audioRef}/>
-      <Canvas draw={draw} className="border-orange-400 border-2" style={{height: "8rem", width: "100%"}} />
+      <Canvas draw={draw} draw2={draw} className="border-orange-400 border-2" style={{height: "8rem", width: "100%"}} />
       <div className="flex items-center justify-end mt-2">
         <button className="text-xs text-gray-600 bg-orange-400 rounded p-1" onClick={() => {
 
-          let a = audioRef.current;
-
-          a.src = "rocks.mp3";
-          a.volume = 0.2;
-          a.loop = true;
-
           if (buttonPressed) {
             setButtonPressed(false);
-            audioRef.current.pause();
+            audioRef.current.volume = 0;
           } else {
             setButtonPressed(true);
-            audioRef.current.play();
+            audioRef.current.volume = 0.2;
           }
           
         }}>{buttonPressed ? "Stop Listening To Audio" : "Listen To Audio"}</button>
